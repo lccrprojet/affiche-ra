@@ -1,9 +1,14 @@
 {
   "$schema": "../core/schema/experience.schema.json",
-  "title": "Affiche augmentée",
+  "title": "Affiche augmentée — CD partagé",
   "author": "DNMade 2 Numérique",
-  "onLost": "hide",
-  "theme": { "color": "#ff3b30", "textColor": "#ffffff", "font": "Space Grotesk" },
-  "behaviors": ["cube-rouge"],
+  "onLost": "freeze",
+  "theme": {
+    "color": "#e61919",
+    "textColor": "#ffffff",
+    "font": "Space Grotesk"
+  },
+  "shared": "playlist-partagee",
+  "behaviors": ["lecteur-vinyle"],
   "bricks": []
 }
