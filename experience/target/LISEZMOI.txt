@@ -1,0 +1,4 @@
+Cible de l'affiche « affiche-ar » — générée le 13/10/2026 10:23:58
+
+Dépose TOUS ces fichiers dans experience/target/ de ton projet (remplace les fichiers de même nom).
+Reconnaissance : faible (10450 points d'accroche, conseillé ≥ 18000).
