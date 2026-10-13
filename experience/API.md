@@ -14,7 +14,7 @@ Projet / groupe : Playlist partagée
 - Identifiant de partage, à recopier dans experience.json : "shared": "playlist-partagee"
 - Listes autorisées : "essais" (pour les tests pendant le travail) et "playlist" (la vraie playlist, montrée au public).
 - Contenu : uniquement des deezerId (identifiants de morceaux Deezer).
-- Les visiteurs peuvent ajouter. La modération se fait par l'enseignant.
+- Les visiteurs peuvent ajouter.
 - Une musique ne peut pas être ajoutée plusieurs fois dans la playlist.
 
 ## Ce qui reste interdit
