@@ -1,16 +1,17 @@
-// Behavior « lecteur-vinyle » : vinyle 3D noir aux reflets rouges qui flotte au-dessus de l'affiche
-// et lecteur audio avec playlist collaborative partagée (liste "essais" via Deezer et ctx.shared).
+// Behavior « lecteur-vinyle » : vinyle/CD 3D flottant et lecteur audio interactif
+// avec affichage double onglet (VERSION 1: Recherche Deezer avec bouton +, VERSION 2: Playlist avec recherche rétractable)
+// et synchronisation collaborative via ctx.shared ("essais") et Deezer.
 
 /** @type {import('../../core/behaviors').Behavior} */
 export default {
   onFound(ctx) {
     // -------------------------------------------------------------------------
-    // 1. CRÉATION DU VINYLE 3D (au-dessus du centre de l'affiche)
+    // 1. CRÉATION DU CD / VINYLE 3D (au-dessus du centre de l'affiche)
     // -------------------------------------------------------------------------
     if (!ctx.state.vinylRoot) {
       const root = new ctx.THREE.Group()
 
-      // Texture procédurale du vinyle : noir profond, microsillons circulaires et reflets rouges
+      // Texture procédurale du disque
       const canvas = typeof OffscreenCanvas !== 'undefined'
         ? new OffscreenCanvas(512, 512)
         : (window.OffscreenCanvas ? new window.OffscreenCanvas(512, 512) : null)
@@ -20,7 +21,7 @@ export default {
         c.fillRect(0, 0, 512, 512)
 
         // Sillons circulaires
-        c.strokeStyle = 'rgba(255, 30, 40, 0.08)'
+        c.strokeStyle = 'rgba(255, 68, 30, 0.08)'
         c.lineWidth = 1.2
         for (let r = 60; r < 240; r += 3) {
           c.beginPath()
@@ -28,30 +29,27 @@ export default {
           c.stroke()
         }
 
-        // Reflets rouges subtils en dégradé
+        // Reflets subtils en dégradé orangé
         const grad = c.createLinearGradient(0, 0, 512, 512)
-        grad.addColorStop(0, 'rgba(230, 20, 30, 0.22)')
+        grad.addColorStop(0, 'rgba(240, 68, 28, 0.22)')
         grad.addColorStop(0.4, 'rgba(0, 0, 0, 0)')
         grad.addColorStop(0.6, 'rgba(0, 0, 0, 0)')
-        grad.addColorStop(1, 'rgba(230, 20, 30, 0.25)')
+        grad.addColorStop(1, 'rgba(240, 68, 28, 0.25)')
         c.fillStyle = grad
         c.beginPath()
         c.arc(256, 256, 245, 0, Math.PI * 2)
         c.fill()
       }
 
-      const vinylTexture = canvas ? new ctx.THREE.CanvasTexture(/** @type {any} */ (canvas)) : null
-
       // Plateau tournant
       const turntable = new ctx.THREE.Group()
 
-      // Épaisseur 3D tangible du CD
+      // Épaisseur 3D du CD
       const epaisseur = 0.012
       const rayon = 0.27
-      // Trou central transparent agrandi pour voir l'affiche à travers
       const trouRayon = 0.08
 
-      // Tranche extérieure physique du CD (ouverte aux deux extrémités)
+      // Tranche extérieure
       const cdEdgeGeo = new ctx.THREE.CylinderGeometry(rayon, rayon, epaisseur, 64, 1, true)
       const cdEdgeMat = new ctx.THREE.MeshStandardMaterial({
         color: 0xd0d0d8,
@@ -63,10 +61,9 @@ export default {
       discMesh.rotation.x = Math.PI / 2
       turntable.add(discMesh)
 
-      // Le petit trou central transparent fait 1/3 du trou actuel (centré dans le trou)
+      // Petit trou central 1/3
       const petitTrouRayon = trouRayon / 3
 
-      // Tranche intérieure du petit trou central (laisse voir l'affiche)
       const innerEdgeGeo = new ctx.THREE.CylinderGeometry(petitTrouRayon, petitTrouRayon, epaisseur, 48, 1, true)
       const innerEdgeMat = new ctx.THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -80,10 +77,10 @@ export default {
       innerEdgeMesh.rotation.x = Math.PI / 2
       turntable.add(innerEdgeMesh)
 
-      // Anneau fin métallique rouge sur le contour extérieur
+      // Anneau fin orange sur le contour extérieur
       const rimGeo = new ctx.THREE.TorusGeometry(rayon, 0.0018, 16, 64)
       const rimMat = new ctx.THREE.MeshStandardMaterial({
-        color: 0xe61919,
+        color: 0xf0441c,
         roughness: 0.25,
         metalness: 0.75,
       })
@@ -91,12 +88,12 @@ export default {
       frontRim.position.z = epaisseur / 2
       turntable.add(frontRim)
 
-      // Surface centrale entre le petit trou et la cover : 70% opaque noir comme un vrai CD
+      // Surface centrale 70% opaque noir
       const hubGeo = new ctx.THREE.RingGeometry(petitTrouRayon, trouRayon, 64)
       const hubMat = new ctx.THREE.MeshStandardMaterial({
         color: 0x09080a,
         transparent: true,
-        opacity: 0.70, // 70 % opaque noir
+        opacity: 0.70,
         roughness: 0.2,
         metalness: 0.5,
         side: ctx.THREE.DoubleSide,
@@ -105,24 +102,19 @@ export default {
       hubMesh.position.z = epaisseur / 2 + 0.0006
       turntable.add(hubMesh)
 
-      // Fin liseré rouge bordant le petit trou central entièrement transparent
+      // Fin liseré orange petit trou
       const innerRimGeo = new ctx.THREE.TorusGeometry(petitTrouRayon, 0.001, 16, 48)
-      const innerRimMat = new ctx.THREE.MeshStandardMaterial({
-        color: 0xe61919,
-        roughness: 0.3,
-        metalness: 0.7,
-      })
-      const innerRimMesh = new ctx.THREE.Mesh(innerRimGeo, innerRimMat)
+      const innerRimMesh = new ctx.THREE.Mesh(innerRimGeo, rimMat)
       innerRimMesh.position.z = epaisseur / 2 + 0.0008
       turntable.add(innerRimMesh)
 
-      // Fin liseré discret bordant la jonction avec la cover
+      // Jonction avec la cover
       const hubBorderGeo = new ctx.THREE.TorusGeometry(trouRayon, 0.0012, 16, 48)
-      const hubBorderMesh = new ctx.THREE.Mesh(hubBorderGeo, innerRimMat)
+      const hubBorderMesh = new ctx.THREE.Mesh(hubBorderGeo, rimMat)
       hubBorderMesh.position.z = epaisseur / 2 + 0.0008
       turntable.add(hubBorderMesh)
 
-      // Face avant : la pochette de l'album sur la surface du CD (hors trou central)
+      // Face avant : pochette album
       const labelGeo = new ctx.THREE.RingGeometry(trouRayon, rayon - 0.001, 64)
       const labelMat = new ctx.THREE.MeshBasicMaterial({
         color: 0x881111,
@@ -132,7 +124,7 @@ export default {
       labelMesh.position.z = epaisseur / 2 + 0.0006
       turntable.add(labelMesh)
 
-      // Surface arrière du CD (face optique argentée avec reflets métalliques)
+      // Face arrière optique
       const backGeo = new ctx.THREE.RingGeometry(trouRayon, rayon - 0.001, 64)
       const backMat = new ctx.THREE.MeshStandardMaterial({
         color: 0xdfe2ec,
@@ -145,10 +137,7 @@ export default {
       turntable.add(backMesh)
 
       root.add(turntable)
-
-      // Position : centre de l'affiche (0.5, 0.44), décollé vers le spectateur (z: 0.28)
       root.position.copy(ctx.toLocal(0.5, 0.44, 0.28))
-      // Parallèle à l'affiche (à plat, sans biais)
       root.rotation.set(0, 0, 0)
 
       ctx.poster.add(root)
@@ -163,18 +152,16 @@ export default {
     ctx.state.vinylRoot.visible = true
 
     // -------------------------------------------------------------------------
-    // 2. CRÉATION DU LECTEUR ET DE L'INTERFACE (ctx.ui)
+    // 2. INTERFACE UTILISATEUR (ctx.ui.panel)
     // -------------------------------------------------------------------------
     if (ctx.state.uiReady) return
     ctx.state.uiReady = true
 
-    // Cache pour éviter de redemander les morceaux déjà connus à Deezer
     ctx.state.trackCache = new Map()
     ctx.state.playlistTracks = []
     ctx.state.currentIndex = 0
     ctx.state.isPlaying = false
 
-    // Un seul lecteur audio pour toute l'expérience (crossOrigin obligatoire)
     const audio = new Audio()
     audio.crossOrigin = 'anonymous'
     ctx.state.audio = audio
@@ -183,26 +170,59 @@ export default {
 
     panel.innerHTML = `
       <div class="cd-device-root">
-        <!-- PARTIE NOIRE SUPÉRIEURE (DRAWER PLAYLIST) -->
+        <!-- PARTIE NOIRE SUPÉRIEURE (DRAWER PLAYLIST AVEC 2 ONGLETS) -->
         <div class="cd-drawer is-closed">
-          <!-- Petite croix pour fermer -->
-          <button class="cd-drawer-close" aria-label="Fermer la playlist" title="Fermer">✕</button>
-
-          <!-- Barre de recherche -->
-          <div class="cd-search-capsule">
-            <input type="text" class="cd-search-input" placeholder="RECHERCHER..." />
-            <button class="cd-search-submit" aria-label="Lancer la recherche" title="Rechercher">🔍</button>
+          <!-- En-tête : Onglets VERSION 1 / VERSION 2 + Croix de fermeture -->
+          <div class="cd-drawer-header">
+            <div class="cd-tabs-nav">
+              <button class="cd-tab-btn is-active" data-tab="version-1">AJOUTER MORCEAUX</button>
+              <button class="cd-tab-btn" data-tab="version-2">PLAYLIST</button>
+            </div>
+            <button class="cd-drawer-close" aria-label="Fermer" title="Fermer">✕</button>
           </div>
-          <div class="cd-search-status"></div>
 
-          <!-- Zone noire centrale contenant les résultats ou la playlist -->
-          <div class="cd-drawer-content">
-            <!-- Résultats de la recherche Deezer -->
-            <div class="cd-search-results"></div>
+          <!-- CONTENU ONGLET VERSION 1 (RECHERCHE + BOUTON +) -->
+          <div class="cd-tab-content is-active" id="tab-version-1">
+            <div class="cd-search-capsule">
+              <input type="text" class="cd-search-input" placeholder="RECHERCHER..." />
+              <button class="cd-search-submit" aria-label="Lancer la recherche" title="Rechercher">
+                <svg viewBox="0 0 24 24" class="cd-search-ico">
+                  <circle cx="11" cy="11" r="7" stroke="#f0441c" stroke-width="2.4" fill="none" />
+                  <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="#f0441c" stroke-width="2.4" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div class="cd-search-status"></div>
 
-            <!-- Liste des morceaux de la playlist partagée -->
-            <div class="cd-playlist-box">
-              <div class="cd-playlist-title">MORCEAUX DE L'AFFICHE</div>
+            <div class="cd-drawer-scroll-area">
+              <div class="cd-search-results">
+                <div class="cd-empty-hint">Tapez un titre ou artiste pour ajouter à la playlist</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTENU ONGLET VERSION 2 (PLAYLIST ENTIÈRE + BOUTON RECHERCHE RÉTRACTABLE) -->
+          <div class="cd-tab-content" id="tab-version-2">
+            <!-- Barre d'outils de la playlist avec recherche rétractable à droite -->
+            <div class="cd-v2-header">
+              <div class="cd-v2-title">PLAYLIST (<span class="cd-v2-count">0</span>)</div>
+              
+              <!-- Bouton recherche qui s'étend en barre de recherche au clic -->
+              <div class="cd-v2-search-box is-collapsed">
+                <button class="cd-v2-search-btn" aria-label="Rechercher dans la playlist" title="Rechercher dans la playlist">
+                  <svg viewBox="0 0 24 24" class="cd-search-ico">
+                    <circle cx="11" cy="11" r="7" stroke="#f0441c" stroke-width="2.4" fill="none" />
+                    <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="#f0441c" stroke-width="2.4" stroke-linecap="round" />
+                  </svg>
+                </button>
+                <div class="cd-v2-search-bar">
+                  <input type="text" class="cd-v2-search-input" placeholder="RECHERCHER DANS LA PLAYLIST..." />
+                  <button class="cd-v2-search-close" title="Fermer la recherche">✕</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="cd-drawer-scroll-area">
               <div class="cd-playlist-items">
                 <div class="cd-loading-txt">Chargement de la playlist...</div>
               </div>
@@ -212,14 +232,22 @@ export default {
 
         <!-- PLAYER D'ORIGINE (CAPSULE HORIZONTALE) -->
         <div class="cd-capsule-bar">
-          <!-- GAUCHE : Cover album identique au CD -->
-          <div class="cd-cover-disc" title="Pochette de l'album en cours">
-            <img class="cd-cover-img" src="" alt="Cover" />
+          <!-- GAUCHE : Cover album identique au CD avec transition animée -->
+          <div class="cd-cover-slot" title="Pochette de l'album en cours">
+            <!-- Emplacement circulaire masquant les transitions horizontales (droite) -->
+            <div class="cd-slot-circle-mask">
+              <div class="cd-cover-disc is-active">
+                <img class="cd-cover-img" src="" alt="Cover" />
+                <div class="cd-disc-center-hole"></div>
+              </div>
+            </div>
+            <!-- Emplacement pour les transitions verticales (haut) limitées par le player -->
+            <div class="cd-slot-vertical-stage"></div>
           </div>
 
-          <!-- CENTRE : Écran LCD rouge défilant + Boutons de contrôle -->
+          <!-- CENTRE : Écran LCD défilant + Boutons de contrôle ergonomiques -->
           <div class="cd-middle-console">
-            <!-- Écran rouge capsule avec défilement de droite à gauche -->
+            <!-- Écran capsule avec défilement de droite à gauche et barre de progression -->
             <div class="cd-screen-capsule">
               <div class="cd-marquee-wrapper">
                 <div class="cd-marquee-track">
@@ -227,34 +255,43 @@ export default {
                   <span class="cd-marquee-text-dup">CHARGEMENT...</span>
                 </div>
               </div>
+              <div class="cd-progress-container" title="Position de lecture">
+                <div class="cd-progress-track">
+                  <div class="cd-progress-bar"></div>
+                </div>
+              </div>
             </div>
 
-            <!-- Boutons géométriques rouges : Précédent, Lecture/Pause, Suivant -->
+            <!-- Boutons de contrôle : Précédent, Play/Pause, Suivant -->
             <div class="cd-controls-row">
               <!-- Précédent -->
               <button class="cd-btn cd-btn-prev" aria-label="Précédent" title="Précédent">
-                <svg viewBox="0 0 38 28" class="cd-svg-icon">
-                  <polygon points="17,14 36,3 36,25" fill="#df2929" />
-                  <polygon points="0,14 19,3 19,25" fill="#df2929" />
+                <svg viewBox="0 0 36 28" class="cd-svg-icon">
+                  <polygon points="16,14 34,3 34,25" fill="#f0441c" />
+                  <polygon points="2,14 20,3 20,25" fill="#f0441c" />
+                  <rect x="0" y="3" width="3.5" height="22" fill="#f0441c" rx="1" />
                 </svg>
               </button>
 
-              <!-- Lecture / Pause -->
+              <!-- Lecture / Pause (Nouveau design net et centré) -->
               <button class="cd-btn cd-btn-play" aria-label="Lecture ou pause" title="Lecture">
-                <svg viewBox="0 0 32 32" class="cd-svg-icon cd-icon-play">
-                  <polygon points="4,2 30,16 4,30" fill="#df2929" />
+                <svg viewBox="0 0 36 36" class="cd-svg-icon cd-icon-play">
+                  <circle cx="18" cy="18" r="17" fill="none" stroke="#f0441c" stroke-width="2.5" />
+                  <polygon points="13,10 27,18 13,26" fill="#f0441c" />
                 </svg>
-                <svg viewBox="0 0 32 32" class="cd-svg-icon cd-icon-pause" style="display:none;">
-                  <rect x="4" y="3" width="8" height="26" fill="#df2929" rx="1" />
-                  <rect x="20" y="3" width="8" height="26" fill="#df2929" rx="1" />
+                <svg viewBox="0 0 36 36" class="cd-svg-icon cd-icon-pause" style="display:none;">
+                  <circle cx="18" cy="18" r="17" fill="none" stroke="#f0441c" stroke-width="2.5" />
+                  <rect x="11.5" y="10" width="4.5" height="16" fill="#f0441c" rx="1" />
+                  <rect x="20" y="10" width="4.5" height="16" fill="#f0441c" rx="1" />
                 </svg>
               </button>
 
-              <!-- Suivant -->
+              <!-- Suivant (Nouveau design net et centré) -->
               <button class="cd-btn cd-btn-next" aria-label="Suivant" title="Suivant">
-                <svg viewBox="0 0 38 28" class="cd-svg-icon">
-                  <polygon points="19,14 0,3 0,25" fill="#df2929" />
-                  <polygon points="36,14 17,3 17,25" fill="#df2929" />
+                <svg viewBox="0 0 36 28" class="cd-svg-icon">
+                  <polygon points="20,14 2,3 2,25" fill="#f0441c" />
+                  <polygon points="34,14 16,3 16,25" fill="#f0441c" />
+                  <rect x="32.5" y="3" width="3.5" height="22" fill="#f0441c" rx="1" />
                 </svg>
               </button>
             </div>
@@ -265,7 +302,7 @@ export default {
             <div class="cd-playlist-dial">
               <svg viewBox="0 0 100 100" class="cd-playlist-svg">
                 <path id="curve-playlist" d="M 14,50 A 36,36 0 0,1 86,50" fill="none" />
-                <text fill="#df2929" font-family="'Courier New', monospace" font-weight="900" font-size="15" letter-spacing="3.8">
+                <text fill="#f0441c" font-family="'Courier New', monospace" font-weight="900" font-size="15" letter-spacing="3.8">
                   <textPath href="#curve-playlist" startOffset="50%" text-anchor="middle">
                     PLAYLIST
                   </textPath>
@@ -277,7 +314,7 @@ export default {
       </div>
     `
 
-    // Styles conformes aux maquettes
+    // Styles complets avec couleur orange préservée (#f0441c), onglets et animations
     ctx.ui.style(`
       .cd-device-root {
         font-family: 'Courier New', 'Lucida Console', Monaco, monospace;
@@ -291,76 +328,124 @@ export default {
         box-sizing: border-box;
       }
 
-      /* PARTIE SUPÉRIEURE : DRAWER PLAYLIST */
+      /* DRAWER SUPÉRIEUR */
       .cd-drawer {
-        width: 380px;
-        max-width: 90vw;
-        background: #232225;
-        border: 2.5px solid #df2929;
+        width: 440px;
+        max-width: 92vw;
+        background: #1e1d21;
+        border: 2.5px solid #f0441c;
         border-bottom: none;
         border-radius: 28px 28px 0 0;
-        padding: 22px 18px 18px;
+        padding: 16px 18px 20px;
         position: relative;
         display: flex;
         flex-direction: column;
         gap: 12px;
         margin-bottom: -10px;
         z-index: 10;
-        box-shadow: 0 -10px 30px rgba(0,0,0,0.65);
+        box-shadow: 0 -12px 36px rgba(0,0,0,0.75);
         box-sizing: border-box;
       }
       .cd-drawer.is-closed {
         display: none;
       }
 
-      /* Petite croix de fermeture */
+      /* EN-TÊTE DU DRAWER : ONGLETS + CROIX */
+      .cd-drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        border-bottom: 1.5px solid rgba(240, 68, 28, 0.25);
+        padding-bottom: 10px;
+      }
+      .cd-tabs-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .cd-tab-btn {
+        background: #2b2b2f;
+        border: 1px solid rgba(240, 68, 28, 0.3);
+        border-radius: 9999px;
+        color: rgba(255, 255, 255, 0.7);
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        padding: 6px 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .cd-tab-btn:hover {
+        color: #ffffff;
+        border-color: #f0441c;
+      }
+      .cd-tab-btn.is-active {
+        background: #f0441c;
+        color: #000000;
+        border-color: #f0441c;
+        box-shadow: 0 2px 8px rgba(240, 68, 28, 0.4);
+      }
+
+      /* Croix pour fermer */
       .cd-drawer-close {
-        position: absolute;
-        top: 8px;
-        right: 14px;
         background: transparent;
         border: none;
-        color: #df2929;
-        font-size: 20px;
+        color: #f0441c;
+        font-size: 22px;
         font-weight: 900;
         cursor: pointer;
-        padding: 2px 6px;
+        padding: 0 4px;
         line-height: 1;
-        transition: transform 0.1s;
+        transition: transform 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .cd-drawer-close:active {
         transform: scale(0.85);
       }
 
-      /* Barre de recherche RECHERCHER... */
+      /* ONGLETS CONTENU */
+      .cd-tab-content {
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .cd-tab-content.is-active {
+        display: flex;
+      }
+
+      /* BARRE DE RECHERCHE VERSION 1 */
       .cd-search-capsule {
         display: flex;
         align-items: center;
         background: #0c0b0d;
         border-radius: 9999px;
         padding: 8px 16px;
-        border: 1px solid rgba(223, 41, 41, 0.4);
+        border: 1.5px solid rgba(240, 68, 28, 0.45);
       }
       .cd-search-input {
         flex: 1;
         background: transparent;
         border: none;
-        color: #df2929;
+        color: #f0441c;
         font-family: 'Courier New', monospace;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 800;
-        letter-spacing: 1.5px;
+        letter-spacing: 1.2px;
         outline: none;
         text-transform: uppercase;
       }
       .cd-search-input::placeholder {
-        color: #df2929;
-        opacity: 0.95;
+        color: #f0441c;
+        opacity: 0.8;
       }
       .cd-search-submit {
         background: transparent;
         border: none;
-        color: #df2929;
+        color: #f0441c;
         cursor: pointer;
         font-size: 15px;
         padding: 2px;
@@ -368,51 +453,141 @@ export default {
 
       .cd-search-status {
         font-size: 11px;
-        color: #ff6666;
+        color: #ff7755;
         text-align: center;
         min-height: 14px;
       }
 
-      /* Contenu intérieur du drawer */
-      .cd-drawer-content {
+      /* ZONE DE DÉFILEMENT INTÉRIEURE */
+      .cd-drawer-scroll-area {
         background: #0c0b0d;
         border-radius: 14px;
-        padding: 12px;
+        padding: 10px 12px;
         max-height: 220px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         gap: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
       }
-      .cd-playlist-title {
+
+      /* VERSION 2 EN-TÊTE AVEC RECHERCHE RÉTRACTABLE */
+      .cd-v2-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        min-height: 38px;
+      }
+      .cd-v2-title {
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 1.2px;
+        color: #f0441c;
+      }
+      .cd-v2-search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .cd-v2-search-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #2b2b2f;
+        border: 1.5px solid #f0441c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.15s, background 0.15s;
+      }
+      .cd-v2-search-btn:active {
+        transform: scale(0.9);
+      }
+      .cd-search-ico {
+        width: 17px;
+        height: 17px;
+        display: block;
+      }
+
+      /* Barre de recherche déroulante dans VERSION 2 */
+      .cd-v2-search-bar {
+        display: none;
+        align-items: center;
+        background: #0c0b0d;
+        border: 1.5px solid #f0441c;
+        border-radius: 9999px;
+        padding: 4px 10px 4px 14px;
+        width: 250px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+        animation: cd-expand 0.2s ease-out;
+      }
+      @keyframes cd-expand {
+        from { opacity: 0; transform: scaleX(0.7); }
+        to { opacity: 1; transform: scaleX(1); }
+      }
+      .cd-v2-search-box:not(.is-collapsed) .cd-v2-search-btn {
+        display: none;
+      }
+      .cd-v2-search-box:not(.is-collapsed) .cd-v2-search-bar {
+        display: flex;
+      }
+      .cd-v2-search-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #f0441c;
+        font-family: 'Courier New', monospace;
         font-size: 11px;
-        color: #df2929;
         font-weight: 800;
-        letter-spacing: 1px;
-        margin-bottom: 6px;
-        text-align: center;
+        outline: none;
+        text-transform: uppercase;
       }
+      .cd-v2-search-input::placeholder {
+        color: #f0441c;
+        opacity: 0.75;
+      }
+      .cd-v2-search-close {
+        background: transparent;
+        border: none;
+        color: #f0441c;
+        font-size: 15px;
+        font-weight: 900;
+        cursor: pointer;
+        padding: 0 4px;
+      }
+
+      /* LIGNES D'ITEMS */
       .cd-search-results, .cd-playlist-items {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 7px;
       }
-
-      /* Lignes items (forme pilule grise + bouton rouge AJOUTER) */
       .cd-row-item {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         width: 100%;
       }
+      .cd-row-thumb {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #1a1a1c;
+        flex-shrink: 0;
+        border: 1px solid rgba(240, 68, 28, 0.4);
+      }
       .cd-row-title-pill {
-        background: #2b2b2e;
+        background: #28282c;
         border-radius: 9999px;
-        padding: 8px 14px;
+        padding: 7px 12px;
         color: #ffffff;
         font-family: 'Courier New', monospace;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         flex: 1;
         min-width: 0;
@@ -422,64 +597,131 @@ export default {
         text-transform: uppercase;
       }
       .cd-row-item.is-active .cd-row-title-pill {
-        background: #3d1c1c;
-        border: 1px solid #df2929;
-        color: #ff6666;
-      }
-      .cd-row-action-btn {
-        background: #df2929;
-        color: #000000;
-        border-radius: 9999px;
-        padding: 7px 16px;
-        border: none;
-        font-family: 'Courier New', monospace;
-        font-size: 11px;
-        font-weight: 900;
-        cursor: pointer;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        flex-shrink: 0;
-        transition: transform 0.1s, background 0.15s;
-      }
-      .cd-row-action-btn:active {
-        transform: scale(0.92);
-      }
-      .cd-loading-txt {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.6);
-        text-align: center;
-        padding: 10px 0;
+        background: #3b1916;
+        border: 1.5px solid #f0441c;
+        color: #ff8866;
       }
 
-      /* PARTIE INFÉRIEURE : CAPSULE BAR */
+      /* PETIT BOUTON "+" POUR LA VERSION 1 */
+      .cd-btn-plus {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #f0441c;
+        color: #000000;
+        border: none;
+        font-size: 20px;
+        font-weight: 900;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: transform 0.12s, background 0.15s;
+        box-shadow: 0 2px 6px rgba(240, 68, 28, 0.4);
+      }
+      .cd-btn-plus:active {
+        transform: scale(0.85);
+      }
+      .cd-btn-plus.is-added {
+        background: #2ecc71;
+        color: #ffffff;
+      }
+
+      /* LIGNES CLIQUABLES DANS LA PLAYLIST */
+      .cd-row-item.cd-row-clickable {
+        cursor: pointer;
+        transition: transform 0.12s ease;
+      }
+      .cd-row-item.cd-row-clickable:hover .cd-row-title-pill {
+        background: #36363b;
+        border-color: rgba(240, 68, 28, 0.45);
+      }
+      .cd-row-item.cd-row-clickable:active {
+        transform: scale(0.98);
+      }
+
+      .cd-empty-hint, .cd-loading-txt {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.55);
+        text-align: center;
+        padding: 12px 6px;
+      }
+
+      /* PARTIE INFÉRIEURE : CAPSULE BAR (Partie grise foncée) */
       .cd-capsule-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
         background: #1c1c1e;
         border-radius: 9999px;
-        padding: 12px 20px;
+        padding: 10px 18px;
         width: 540px;
         max-width: 95vw;
         box-shadow: 0 10px 32px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.08);
         position: relative;
         z-index: 20;
         box-sizing: border-box;
+        overflow: hidden; /* Masque tout élément d'animation qui sort du player (partie grise foncée) */
       }
 
-      /* GAUCHE : Cover album identique au CD */
-      .cd-cover-disc {
-        width: 76px;
-        height: 76px;
-        border-radius: 50%;
-        overflow: hidden;
-        background: #0c0b0d;
-        border: 3px solid #111113;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+      /* GAUCHE : Cover album identique au CD avec animation de transition */
+      .cd-cover-slot {
+        width: 74px;
+        height: 74px;
         flex-shrink: 0;
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
+      }
+
+      /* Masque circulaire (74x74px) : l'animation de/vers la droite se limite strictement à l'emplacement cercle */
+      .cd-slot-circle-mask {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 74px;
+        height: 74px;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      /* Scène verticale : non bridée par le cercle, découpée par la bordure supérieure de .cd-capsule-bar */
+      .cd-slot-vertical-stage {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 74px;
+        height: 74px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 3;
+      }
+
+      .cd-cover-disc {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 74px;
+        height: 74px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: radial-gradient(circle, #28282c 0%, #0c0b0d 85%);
+        border: 2.5px solid #111113;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        will-change: transform, opacity;
       }
       .cd-cover-img {
         width: 100%;
@@ -487,6 +729,112 @@ export default {
         object-fit: cover;
         border-radius: 50%;
         display: block;
+        pointer-events: none;
+      }
+      .cd-disc-center-hole {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #1c1c1e;
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.9);
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      /* Transitions animées du CD avec effet de transparence */
+      /* 1. Bouton Suivant (droite) : le CD actuel part à droite (limité au cercle), le nouveau arrive du haut (limité au player) */
+      .cd-disc-exit-right {
+        animation: cd-disc-anim-exit-right 0.34s cubic-bezier(0.4, 0.0, 0.6, 1) forwards;
+        pointer-events: none;
+      }
+      .cd-disc-enter-top {
+        animation: cd-disc-anim-enter-top 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        pointer-events: none;
+      }
+
+      /* 2. Bouton Précédent (gauche) : le CD actuel part vers le haut (transparent à la limite), le nouveau arrive de la droite */
+      .cd-disc-exit-top {
+        animation: cd-disc-anim-exit-top 0.34s cubic-bezier(0.4, 0.0, 0.6, 1) forwards;
+        pointer-events: none;
+      }
+      .cd-disc-enter-right {
+        animation: cd-disc-anim-enter-right 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        pointer-events: none;
+      }
+
+      /* Sortie par la droite : limitée à la forme cercle du CD */
+      @keyframes cd-disc-anim-exit-right {
+        0% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.45;
+        }
+        100% {
+          transform: translateX(52px);
+          opacity: 0;
+        }
+      }
+
+      /* Arrivée du haut : seule la partie à l'intérieur du player (partie grise foncée) est visible */
+      @keyframes cd-disc-anim-enter-top {
+        0% {
+          transform: translateY(-44px);
+          opacity: 0.15;
+        }
+        35% {
+          transform: translateY(-24px);
+          opacity: 0.6;
+        }
+        100% {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* Sortie vers le haut : totalement transparent à la limite supérieure du player */
+      @keyframes cd-disc-anim-exit-top {
+        0% {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        25% {
+          transform: translateY(-6px);
+          opacity: 0.45;
+        }
+        55% {
+          transform: translateY(-12px);
+          opacity: 0.08;
+        }
+        80% {
+          transform: translateY(-18px);
+          opacity: 0;
+        }
+        100% {
+          transform: translateY(-24px);
+          opacity: 0;
+        }
+      }
+
+      /* Arrivée de droite : 100% transparent avant l'emplacement cercle, visible seulement dans le cercle */
+      @keyframes cd-disc-anim-enter-right {
+        0% {
+          transform: translateX(74px);
+          opacity: 0;
+        }
+        20% {
+          opacity: 0.1;
+        }
+        55% {
+          opacity: 0.65;
+        }
+        100% {
+          transform: translateX(0);
+          opacity: 1;
+        }
       }
 
       /* CENTRE : Console écran + boutons */
@@ -495,58 +843,98 @@ export default {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
         flex: 1;
-        padding: 0 16px;
+        padding: 0 14px;
         min-width: 0;
       }
 
-      /* Écran capsule rouge */
+      /* Écran capsule orange/rouge */
       .cd-screen-capsule {
-        width: 250px;
+        width: 260px;
         max-width: 100%;
-        height: 38px;
-        background: #df2929;
+        height: 40px;
+        background: #f0441c;
         border-radius: 9999px;
         display: flex;
+        flex-direction: column;
         align-items: center;
+        justify-content: center;
+        gap: 3px;
         overflow: hidden;
         position: relative;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 2px 8px rgba(223,41,41,0.25);
+        padding: 4px 14px 4px;
+        box-sizing: border-box;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 2px 8px rgba(240,68,28,0.3);
       }
       .cd-marquee-wrapper {
         width: 100%;
         overflow: hidden;
         white-space: nowrap;
         display: flex;
+        align-items: center;
+        height: 16px;
       }
       .cd-marquee-track {
         display: inline-flex;
+        align-items: center;
         white-space: nowrap;
-        animation: cd-marquee 12s linear infinite;
+        animation: cd-marquee 8s linear infinite;
+        will-change: transform;
       }
       .cd-marquee-text, .cd-marquee-text-dup {
         display: inline-block;
         padding-right: 48px;
         font-family: 'Courier New', 'Lucida Console', Monaco, monospace;
-        font-size: 21px; /* Texte plus grand pour cacher certaines lettres et les révéler en défilant */
+        font-size: 13px;
         font-weight: 900;
         color: #000000;
-        letter-spacing: 2px;
+        letter-spacing: 1.3px;
         text-transform: uppercase;
+        line-height: 1;
       }
-
       @keyframes cd-marquee {
         0% { transform: translateX(0); }
         100% { transform: translateX(-50%); }
       }
 
-      /* Rangée des boutons de contrôle géométriques rouges */
+      /* Barre de progression sous le texte de la musique */
+      .cd-progress-container {
+        width: 190px;
+        max-width: 82%;
+        height: 6px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 1px 0;
+      }
+      .cd-progress-track {
+        width: 100%;
+        height: 3.5px;
+        background: rgba(0, 0, 0, 0.28);
+        border-radius: 9999px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+        transition: background 0.15s;
+      }
+      .cd-progress-container:hover .cd-progress-track {
+        background: rgba(0, 0, 0, 0.38);
+      }
+      .cd-progress-bar {
+        width: 0%;
+        height: 100%;
+        background: #000000;
+        border-radius: 9999px;
+        transition: width 0.08s linear;
+      }
+
+      /* Rangée des boutons de contrôle */
       .cd-controls-row {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 22px;
+        gap: 20px;
       }
       .cd-btn {
         background: transparent;
@@ -556,18 +944,18 @@ export default {
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform 0.1s;
+        transition: transform 0.12s;
       }
       .cd-btn:active {
         transform: scale(0.9);
       }
       .cd-btn-prev, .cd-btn-next {
         width: 36px;
-        height: 26px;
+        height: 28px;
       }
       .cd-btn-play {
-        width: 38px;
-        height: 38px;
+        width: 42px;
+        height: 42px;
       }
       .cd-svg-icon {
         width: 100%;
@@ -577,11 +965,11 @@ export default {
 
       /* DROITE : Bouton PLAYLIST rotatif */
       .cd-playlist-btn {
-        width: 76px;
-        height: 76px;
+        width: 74px;
+        height: 74px;
         border-radius: 50%;
         background: #0c0b0d;
-        border: 2px solid #222226;
+        border: 2px solid #242428;
         box-shadow: 0 4px 12px rgba(0,0,0,0.7);
         flex-shrink: 0;
         cursor: pointer;
@@ -594,7 +982,7 @@ export default {
         transition: transform 0.15s, border-color 0.2s;
       }
       .cd-playlist-btn:hover {
-        border-color: #df2929;
+        border-color: #f0441c;
       }
       .cd-playlist-btn:active {
         transform: scale(0.94);
@@ -610,11 +998,9 @@ export default {
       .cd-playlist-dial.is-playing {
         animation-duration: 2.2s;
       }
-
       @keyframes cd-dial-spin {
         to { transform: rotate(360deg); }
       }
-
       .cd-playlist-svg {
         width: 100%;
         height: 100%;
@@ -622,10 +1008,12 @@ export default {
       }
     `)
 
-    // Éléments DOM
-    const coverImg = panel.querySelector('.cd-cover-img')
+    // DOM Elements
+    const coverSlot = panel.querySelector('.cd-cover-slot')
     const marqueeText = panel.querySelector('.cd-marquee-text')
     const marqueeTextDup = panel.querySelector('.cd-marquee-text-dup')
+    const progressContainer = panel.querySelector('.cd-progress-container')
+    const progressBar = panel.querySelector('.cd-progress-bar')
     const playBtn = panel.querySelector('.cd-btn-play')
     const iconPlay = panel.querySelector('.cd-icon-play')
     const iconPause = panel.querySelector('.cd-icon-pause')
@@ -637,13 +1025,26 @@ export default {
     const drawer = panel.querySelector('.cd-drawer')
     const closeDrawerBtn = panel.querySelector('.cd-drawer-close')
 
+    // Onglets
+    const tabButtons = panel.querySelectorAll('.cd-tab-btn')
+    const tabV1 = panel.querySelector('#tab-version-1')
+    const tabV2 = panel.querySelector('#tab-version-2')
+
+    // V1 Recherche
     const searchInput = panel.querySelector('.cd-search-input')
     const searchSubmit = panel.querySelector('.cd-search-submit')
     const searchStatus = panel.querySelector('.cd-search-status')
     const searchResults = panel.querySelector('.cd-search-results')
-    const playlistItemsContainer = panel.querySelector('.cd-playlist-items')
 
-    // Ouvrir / Fermer le volet playlist
+    // V2 Playlist
+    const v2Count = panel.querySelector('.cd-v2-count')
+    const playlistItemsContainer = panel.querySelector('.cd-playlist-items')
+    const v2SearchBox = panel.querySelector('.cd-v2-search-box')
+    const v2SearchBtn = panel.querySelector('.cd-v2-search-btn')
+    const v2SearchInput = panel.querySelector('.cd-v2-search-input')
+    const v2SearchClose = panel.querySelector('.cd-v2-search-close')
+
+    // Gestion de l'ouverture / fermeture du drawer
     playlistBtn.addEventListener('click', () => {
       drawer.classList.toggle('is-closed')
     })
@@ -651,18 +1052,142 @@ export default {
       drawer.classList.add('is-closed')
     })
 
-    // Met à jour le texte défilant dans l'écran LCD rouge
+    // Navigation entre onglets VERSION 1 et VERSION 2
+    tabButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach((b) => b.classList.remove('is-active'))
+        btn.classList.add('is-active')
+        const target = btn.getAttribute('data-tab')
+        if (target === 'version-1') {
+          tabV1.classList.add('is-active')
+          tabV2.classList.remove('is-active')
+        } else {
+          tabV1.classList.remove('is-active')
+          tabV2.classList.add('is-active')
+        }
+      })
+    })
+
+    // Gestion de la recherche rétractable dans VERSION 2
+    v2SearchBtn.addEventListener('click', () => {
+      v2SearchBox.classList.remove('is-collapsed')
+      v2SearchInput.focus()
+    })
+    v2SearchClose.addEventListener('click', () => {
+      v2SearchInput.value = ''
+      v2SearchBox.classList.add('is-collapsed')
+      renderPlaylistItems()
+    })
+    v2SearchInput.addEventListener('input', () => {
+      renderPlaylistItems()
+    })
+
+    // Met à jour le texte défilant dans l'écran LCD
     const updateMarquee = (title, artist) => {
       const text = `${title} - ${artist}`.toUpperCase()
       if (marqueeText) marqueeText.textContent = text
       if (marqueeTextDup) marqueeTextDup.textContent = text
     }
 
-    // Mise à jour de la pochette sur le CD 3D et dans le player
-    const update3DVinylCover = (coverUrl) => {
-      if (coverImg && coverUrl) {
-        coverImg.src = coverUrl
+    // Animation de transition de disque (pochette CD sur le player) avec effet de transparence
+    const animateDiscCover = (coverUrl, direction = 'next') => {
+      if (!coverSlot || !coverUrl) return
+
+      const circleMask = coverSlot.querySelector('.cd-slot-circle-mask')
+      const verticalStage = coverSlot.querySelector('.cd-slot-vertical-stage')
+      if (!circleMask || !verticalStage) return
+
+      const currentDisc = coverSlot.querySelector('.cd-cover-disc.is-active')
+      const currentImg = currentDisc ? currentDisc.querySelector('.cd-cover-img') : null
+
+      // Premier chargement ou direction nulle : injection directe sans animation de sortie
+      if (direction === 'none' || !currentDisc || !currentImg || !currentImg.getAttribute('src')) {
+        circleMask.innerHTML = `
+          <div class="cd-cover-disc is-active">
+            <img class="cd-cover-img" src="${coverUrl}" alt="Cover" />
+            <div class="cd-disc-center-hole"></div>
+          </div>
+        `
+        verticalStage.innerHTML = ''
+        return
       }
+
+      // Si c'est déjà la même cover et aucune animation en cours, rien à faire
+      if (currentImg.src === coverUrl && !coverSlot.querySelector('.cd-disc-exit-right, .cd-disc-exit-top')) {
+        return
+      }
+
+      // Nettoyer les disques précédents en sortie pour éviter les accumulations lors de clics rapides
+      coverSlot.querySelectorAll('.cd-cover-disc:not(.is-active)').forEach((el) => el.remove())
+
+      currentDisc.classList.remove('is-active')
+
+      if (direction === 'next') {
+        // --- BOUTON DROITE (SUIVANT) ---
+        // 1. Sortie vers la droite : confinée strictement dans la forme cercle du CD (.cd-slot-circle-mask)
+        currentDisc.classList.add('cd-disc-exit-right')
+        circleMask.appendChild(currentDisc)
+
+        const cleanupExit = () => {
+          if (currentDisc.parentNode) currentDisc.remove()
+        }
+        currentDisc.addEventListener('animationend', cleanupExit, { once: true })
+        setTimeout(cleanupExit, 420)
+
+        // 2. Arrivée du haut : dans .cd-slot-vertical-stage, coupée par la limite supérieure du player (.cd-capsule-bar)
+        verticalStage.innerHTML = `
+          <div class="cd-cover-disc is-active cd-disc-enter-top">
+            <img class="cd-cover-img" src="${coverUrl}" alt="Cover" />
+            <div class="cd-disc-center-hole"></div>
+          </div>
+        `
+        const newDisc = verticalStage.firstElementChild
+        if (newDisc) {
+          const onEnterEnd = () => {
+            newDisc.classList.remove('cd-disc-enter-top')
+            if (circleMask) {
+              circleMask.innerHTML = ''
+              circleMask.appendChild(newDisc)
+            }
+          }
+          newDisc.addEventListener('animationend', onEnterEnd, { once: true })
+          setTimeout(onEnterEnd, 420)
+        }
+      } else {
+        // --- BOUTON GAUCHE (PRÉCÉDENT) ---
+        // 1. Sortie vers le haut : dans .cd-slot-vertical-stage, totalement transparente à la limite du player
+        verticalStage.innerHTML = ''
+        verticalStage.appendChild(currentDisc)
+        currentDisc.classList.add('cd-disc-exit-top')
+
+        const cleanupExit = () => {
+          if (currentDisc.parentNode) currentDisc.remove()
+        }
+        currentDisc.addEventListener('animationend', cleanupExit, { once: true })
+        setTimeout(cleanupExit, 420)
+
+        // 2. Arrivée de droite : dans .cd-slot-circle-mask, 100% transparente avant l'emplacement cercle
+        circleMask.innerHTML = `
+          <div class="cd-cover-disc is-active cd-disc-enter-right">
+            <img class="cd-cover-img" src="${coverUrl}" alt="Cover" />
+            <div class="cd-disc-center-hole"></div>
+          </div>
+        `
+        const newDisc = circleMask.firstElementChild
+        if (newDisc) {
+          const onEnterEnd = () => {
+            newDisc.classList.remove('cd-disc-enter-right')
+          }
+          newDisc.addEventListener('animationend', onEnterEnd, { once: true })
+          setTimeout(onEnterEnd, 420)
+        }
+      }
+    }
+
+    // Mise à jour de la pochette sur le CD 3D et dans le player
+    const update3DVinylCover = (coverUrl, direction = 'next') => {
+      animateDiscCover(coverUrl, direction)
+
       if (!ctx.state.labelMesh || !coverUrl) return
       const loader = new ctx.THREE.TextureLoader()
       loader.setCrossOrigin('anonymous')
@@ -686,27 +1211,27 @@ export default {
     }
 
     // Charger et jouer un morceau
-    const chargerMorceau = (index, autoPlay = true) => {
+    const chargerMorceau = (index, autoPlay = true, direction = 'next') => {
       const list = ctx.state.playlistTracks
       if (!list || list.length === 0) return
 
+      const prevIndex = ctx.state.currentIndex
       ctx.state.currentIndex = (index + list.length) % list.length
       const track = list[ctx.state.currentIndex]
       if (!track) return
 
-      // Met à jour le texte défilant rouge
+      const dir = direction || (index >= prevIndex ? 'next' : 'prev')
+
       updateMarquee(track.title, track.artist)
-
-      // Met à jour la pochette du CD 3D et du rond gauche
-      update3DVinylCover(track.cover)
-
-      // Source audio
+      update3DVinylCover(track.cover, dir)
       audio.src = track.preview
+      if (progressBar) progressBar.style.width = '0%'
 
       // Met en surbrillance dans la playlist
       const rows = playlistItemsContainer.querySelectorAll('.cd-row-item')
-      rows.forEach((row, i) => {
-        row.classList.toggle('is-active', i === ctx.state.currentIndex)
+      rows.forEach((row) => {
+        const rowId = Number(row.getAttribute('data-id'))
+        row.classList.toggle('is-active', rowId === track.id)
       })
 
       if (autoPlay) {
@@ -725,7 +1250,7 @@ export default {
     playBtn.addEventListener('click', () => {
       if (audio.paused) {
         if (!audio.src && ctx.state.playlistTracks.length > 0) {
-          chargerMorceau(ctx.state.currentIndex, true)
+          chargerMorceau(ctx.state.currentIndex, true, 'next')
         } else {
           audio.play().then(() => {
             ctx.state.isPlaying = true
@@ -744,15 +1269,16 @@ export default {
     })
 
     prevBtn.addEventListener('click', () => {
-      chargerMorceau(ctx.state.currentIndex - 1, true)
+      chargerMorceau(ctx.state.currentIndex - 1, true, 'prev')
     })
 
     nextBtn.addEventListener('click', () => {
-      chargerMorceau(ctx.state.currentIndex + 1, true)
+      chargerMorceau(ctx.state.currentIndex + 1, true, 'next')
     })
 
     audio.addEventListener('ended', () => {
-      chargerMorceau(ctx.state.currentIndex + 1, true)
+      if (progressBar) progressBar.style.width = '0%'
+      chargerMorceau(ctx.state.currentIndex + 1, true, 'next')
     })
 
     audio.addEventListener('pause', () => {
@@ -769,38 +1295,69 @@ export default {
       playlistDial.classList.add('is-playing')
     })
 
-    // Rendu de la liste de lecture (Option B avec design pilules)
-    const renderPlaylistItems = () => {
-      const tracks = ctx.state.playlistTracks
+    // Suivi de la barre de progression en temps réel
+    if (progressContainer && progressBar) {
+      audio.addEventListener('timeupdate', () => {
+        if (audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
+          const pct = Math.min(100, Math.max(0, (audio.currentTime / audio.duration) * 100))
+          progressBar.style.width = `${pct}%`
+        } else {
+          progressBar.style.width = '0%'
+        }
+      })
 
-      if (tracks.length === 0) {
-        playlistItemsContainer.innerHTML = '<div class="cd-loading-txt">Aucun morceau dans la playlist. Cherche un titre pour commencer !</div>'
+      // Déplacement au clic sur la barre de progression
+      progressContainer.addEventListener('click', (e) => {
+        if (!audio.duration || isNaN(audio.duration) || audio.duration <= 0) return
+        const rect = progressContainer.getBoundingClientRect()
+        const clickX = e.clientX - rect.left
+        const fraction = Math.min(1, Math.max(0, clickX / rect.width))
+        audio.currentTime = fraction * audio.duration
+      })
+    }
+
+    // Rendu de la VERSION 2 (Playlist entière avec filtre)
+    const renderPlaylistItems = () => {
+      const allTracks = ctx.state.playlistTracks || []
+      if (v2Count) v2Count.textContent = String(allTracks.length)
+
+      const filterVal = (v2SearchInput ? v2SearchInput.value : '').trim().toLowerCase()
+      const filtered = filterVal
+        ? allTracks.filter((t) => t.title.toLowerCase().includes(filterVal) || t.artist.toLowerCase().includes(filterVal))
+        : allTracks
+
+      if (filtered.length === 0) {
+        playlistItemsContainer.innerHTML = filterVal
+          ? '<div class="cd-empty-hint">Aucun morceau ne correspond à votre filtre.</div>'
+          : '<div class="cd-loading-txt">La playlist est vide. Utilisez l\'onglet AJOUTER MORCEAUX pour en ajouter !</div>'
         return
       }
 
       playlistItemsContainer.innerHTML = ''
-      tracks.forEach((track, i) => {
+      filtered.forEach((track) => {
+        const isCurrent = allTracks[ctx.state.currentIndex]?.id === track.id
         const itemHtml = `
-          <div class="cd-row-item ${i === ctx.state.currentIndex ? 'is-active' : ''}" data-index="${i}">
+          <div class="cd-row-item cd-row-clickable ${isCurrent ? 'is-active' : ''}" data-id="${track.id}" title="Cliquer pour écouter">
+            ${track.cover ? `<img src="${track.cover}" class="cd-row-thumb" alt="cover" />` : ''}
             <div class="cd-row-title-pill">${track.title} - ${track.artist}</div>
-            <button class="cd-row-action-btn cd-btn-play-item">ÉCOUTER</button>
           </div>
         `
         playlistItemsContainer.insertAdjacentHTML('beforeend', itemHtml)
       })
 
       playlistItemsContainer.querySelectorAll('.cd-row-item').forEach((row) => {
-        const playRowBtn = row.querySelector('.cd-btn-play-item')
-        if (playRowBtn) {
-          playRowBtn.addEventListener('click', () => {
-            const idx = Number(row.getAttribute('data-index'))
-            chargerMorceau(idx, true)
-          })
-        }
+        row.addEventListener('click', () => {
+          const trackId = Number(row.getAttribute('data-id'))
+          const realIndex = allTracks.findIndex((t) => t.id === trackId)
+          if (realIndex !== -1) {
+            const dir = realIndex >= ctx.state.currentIndex ? 'next' : 'prev'
+            chargerMorceau(realIndex, true, dir)
+          }
+        })
       })
     }
 
-    // Récupération des infos Deezer pour un morceau donné
+    // Récupération des infos Deezer
     const fetchTrackInfo = async (deezerId) => {
       if (ctx.state.trackCache.has(deezerId)) {
         return ctx.state.trackCache.get(deezerId)
@@ -825,7 +1382,7 @@ export default {
     }
 
     // -------------------------------------------------------------------------
-    // 3. SYNCHRONISATION EN TEMPS RÉEL AVEC LA LISTE PARTAGÉE ("essais")
+    // 3. SYNCHRONISATION EN TEMPS RÉEL ("essais")
     // -------------------------------------------------------------------------
     const fallbackTrack = {
       id: 3135556,
@@ -846,13 +1403,12 @@ export default {
           if (demoInfo) {
             ctx.state.playlistTracks = [demoInfo]
             renderPlaylistItems()
-            chargerMorceau(0, false)
+            chargerMorceau(0, false, 'none')
           }
         }
         return
       }
 
-      // Charge les infos de chaque morceau
       const results = await Promise.all(deezerIds.map((id) => fetchTrackInfo(id)))
       const validTracks = results.filter((t) => t !== null && Boolean(t.preview))
 
@@ -861,7 +1417,7 @@ export default {
         renderPlaylistItems()
 
         if (!audio.src) {
-          chargerMorceau(0, false)
+          chargerMorceau(0, false, 'none')
         }
       }
     }, (err) => {
@@ -869,7 +1425,7 @@ export default {
     })
 
     // -------------------------------------------------------------------------
-    // 4. RECHERCHE DE MORCEAUX SUR DEEZER ET AJOUT DANS "essais"
+    // 4. VERSION 1 : RECHERCHE DEEZER AVEC LE BOUTON "+"
     // -------------------------------------------------------------------------
     const executerRecherche = async () => {
       const query = searchInput.value.trim()
@@ -879,7 +1435,7 @@ export default {
       searchResults.innerHTML = ''
 
       try {
-        const reponse = await ctx.deezer('/search', { q: query, limit: 5 })
+        const reponse = await ctx.deezer('/search', { q: query, limit: 6 })
         const tracks = reponse?.data || []
 
         if (tracks.length === 0) {
@@ -891,26 +1447,30 @@ export default {
         searchResults.innerHTML = ''
 
         tracks.forEach((track) => {
+          const coverSmall = track.album?.cover_small || ''
           const itemHtml = `
             <div class="cd-row-item" data-id="${track.id}">
+              ${coverSmall ? `<img src="${coverSmall}" class="cd-row-thumb" alt="cover" />` : ''}
               <div class="cd-row-title-pill">${track.title} - ${track.artist?.name || ''}</div>
-              <button class="cd-row-action-btn cd-btn-add">AJOUTER</button>
+              <button class="cd-btn-plus" title="Ajouter ce morceau" aria-label="Ajouter">+</button>
             </div>
           `
           searchResults.insertAdjacentHTML('beforeend', itemHtml)
         })
 
         searchResults.querySelectorAll('.cd-row-item').forEach((item) => {
-          const addBtn = item.querySelector('.cd-btn-add')
+          const addBtn = item.querySelector('.cd-btn-plus')
           const trackId = Number(item.getAttribute('data-id'))
           const track = tracks.find((t) => t.id === trackId)
           if (!addBtn || !track) return
 
           addBtn.addEventListener('click', async () => {
             /** @type {HTMLButtonElement} */ (addBtn).disabled = true
-            addBtn.textContent = 'AJOUT...'
+            addBtn.textContent = '…'
             try {
               await ctx.shared.add('essais', { deezerId: track.id })
+              addBtn.textContent = '✔'
+              addBtn.classList.add('is-added')
               searchStatus.style.color = '#34c759'
               searchStatus.textContent = `✔ « ${track.title} » AJOUTÉ !`
               ctx.state.trackCache.set(track.id, {
@@ -920,13 +1480,13 @@ export default {
                 cover: track.album?.cover_medium || track.album?.cover_small || '',
                 preview: track.preview,
               })
-              setTimeout(() => { searchStatus.textContent = '' }, 4000)
+              setTimeout(() => { searchStatus.textContent = '' }, 3500)
             } catch (err) {
               searchStatus.style.color = '#ff6b6b'
               searchStatus.textContent = err.message
+              addBtn.textContent = '+'
             } finally {
               /** @type {HTMLButtonElement} */ (addBtn).disabled = false
-              addBtn.textContent = 'AJOUTER'
             }
           })
         })
@@ -943,21 +1503,17 @@ export default {
   },
 
   onLost(ctx) {
-    // Si l'affiche est perdue, le vinyle 3D se cache
     if (ctx.state.vinylRoot) {
       ctx.state.vinylRoot.visible = false
     }
-    // L'interface à l'écran reste active grâce à keep: true et la musique continue
   },
 
   onUpdate(ctx, t, dt) {
-    // Rotation continue du disque vinyle (plus rapide quand la musique joue)
     if (ctx.state.turntable && ctx.state.vinylRoot?.visible) {
       const vitesse = ctx.state.isPlaying ? 2.5 : 0.8
       ctx.state.turntable.rotation.z -= dt * vitesse
     }
 
-    // Léger flottement en profondeur pour faire ressortir l'épaisseur et les reflets de la tranche
     if (ctx.state.vinylRoot && ctx.state.vinylRoot.visible) {
       const zBase = ctx.toLocal(0.5, 0.44, 0.28).z
       ctx.state.vinylRoot.position.z = zBase + Math.sin(t * 1.6) * 0.008
