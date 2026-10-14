@@ -6,7 +6,7 @@
   "theme": {
     "color": "#e61919",
     "textColor": "#ffffff",
-    "font": "Space Grotesk"
+    "font": "Hammersmith One"
   },
   "shared": "playlist-partagee",
   "behaviors": ["lecteur-vinyle"],

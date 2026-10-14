@@ -172,11 +172,15 @@ export default {
       <div class="cd-device-root">
         <!-- PARTIE NOIRE SUPÉRIEURE (DRAWER PLAYLIST AVEC 2 ONGLETS) -->
         <div class="cd-drawer is-closed">
-          <!-- En-tête : Onglet PLAYLIST à gauche / AJOUTER MORCEAUX à droite + Croix de fermeture -->
+          <!-- En-tête : Onglet PLAYLIST à gauche / AJOUTER MORCEAUX à droite avec biseau -->
           <div class="cd-drawer-header">
             <div class="cd-tabs-nav">
-              <button class="cd-tab-btn is-active" data-tab="version-2">PLAYLIST</button>
-              <button class="cd-tab-btn" data-tab="version-1">AJOUTER MORCEAUX</button>
+              <button class="cd-tab-btn cd-tab-left is-active" data-tab="version-2">
+                <span>PLAYLIST</span>
+              </button>
+              <button class="cd-tab-btn cd-tab-right" data-tab="version-1">
+                <span>AJOUTER MORCEAUX</span>
+              </button>
             </div>
             <button class="cd-drawer-close" aria-label="Fermer" title="Fermer">✕</button>
           </div>
@@ -185,7 +189,7 @@ export default {
           <div class="cd-tab-content is-active" id="tab-version-2">
             <!-- Barre d'outils de la playlist avec recherche rétractable à droite -->
             <div class="cd-v2-header">
-              <div class="cd-v2-title">PLAYLIST (<span class="cd-v2-count">0</span>)</div>
+              <div class="cd-v2-title">NOMBRE DE TITRES: <span class="cd-v2-count">0</span></div>
               
               <!-- Bouton recherche qui s'étend en barre de recherche au clic -->
               <div class="cd-v2-search-box is-collapsed">
@@ -213,12 +217,19 @@ export default {
           <div class="cd-tab-content" id="tab-version-1">
             <div class="cd-search-capsule">
               <input type="text" class="cd-search-input" placeholder="RECHERCHER..." />
-              <button class="cd-search-submit" aria-label="Lancer la recherche" title="Rechercher">
-                <svg viewBox="0 0 24 24" class="cd-search-ico">
-                  <circle cx="11" cy="11" r="7" stroke="#f0441c" stroke-width="2.4" fill="none" />
-                  <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="#f0441c" stroke-width="2.4" stroke-linecap="round" />
-                </svg>
-              </button>
+              <div class="cd-search-btns">
+                <button class="cd-search-submit" aria-label="Lancer la recherche" title="Rechercher">
+                  <svg viewBox="0 0 24 24" class="cd-search-ico">
+                    <circle cx="11" cy="11" r="7" stroke="#e84522" stroke-width="2.4" fill="none" />
+                    <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="#e84522" stroke-width="2.4" stroke-linecap="round" />
+                  </svg>
+                </button>
+                <button class="cd-search-reset" aria-label="Remettre à zéro" title="Remettre la recherche à zéro">
+                  <svg viewBox="0 0 24 24" class="cd-refresh-ico">
+                    <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="#e84522" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <div class="cd-search-status"></div>
 
@@ -302,7 +313,7 @@ export default {
             <div class="cd-playlist-dial">
               <svg viewBox="0 0 100 100" class="cd-playlist-svg">
                 <path id="curve-playlist" d="M 14,50 A 36,36 0 0,1 86,50" fill="none" />
-                <text fill="#f0441c" font-family="'Courier New', monospace" font-weight="900" font-size="15" letter-spacing="3.8">
+                <text fill="#e84522" font-family="'Hammersmith One', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="15" letter-spacing="3.8">
                   <textPath href="#curve-playlist" startOffset="50%" text-anchor="middle">
                     PLAYLIST
                   </textPath>
@@ -315,7 +326,7 @@ export default {
     `
 
     ctx.ui.style(`
-      }
+      @import url('https://fonts.googleapis.com/css2?family=Hammersmith+One&display=swap');
 
       /* Le conteneur UI (#ra-hotspots) et le player passent devant le viseur (.ra-aim z-index: 20) */
       #ra-hotspots {
@@ -337,9 +348,12 @@ export default {
         z-index: 10 !important;
       }
 
-      .ra-panels {
+      .cd-device-root,
+      .cd-device-root * {
+        font-family: 'Hammersmith One', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+
       .cd-device-root {
-        font-family: 'Courier New', 'Lucida Console', Monaco, monospace;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -352,90 +366,138 @@ export default {
 
       /* DRAWER SUPÉRIEUR */
       .cd-drawer {
-        width: 440px;
-        max-width: 92vw;
-        background: #1e1d21;
-        border: 2.5px solid #f0441c;
+        width: 480px;
+        max-width: 94vw;
+        background: #19191d;
+        border: 2.5px solid #000000;
         border-bottom: none;
         border-radius: 28px 28px 0 0;
-        padding: 16px 18px 20px;
+        padding: 0 0 16px 0;
         position: relative;
         display: flex;
         flex-direction: column;
-        gap: 12px;
         margin-bottom: -10px;
         z-index: 10;
-        box-shadow: 0 -12px 36px rgba(0,0,0,0.75);
+        box-shadow: 0 -12px 36px rgba(0,0,0,0.85);
         box-sizing: border-box;
+        overflow: hidden;
       }
       .cd-drawer.is-closed {
         display: none;
       }
 
-      /* EN-TÊTE DU DRAWER : ONGLETS + CROIX */
+      /* EN-TÊTE DU DRAWER : BANDEAU BISEAUTÉ PLEINE LARGEUR */
       .cd-drawer-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        position: relative;
         width: 100%;
-        border-bottom: 1.5px solid rgba(240, 68, 28, 0.25);
-        padding-bottom: 10px;
+        height: 52px;
+        display: flex;
+        align-items: stretch;
+        background: #000000;
+        border-bottom: 2px solid #000000;
+        box-sizing: border-box;
       }
       .cd-tabs-nav {
         display: flex;
-        align-items: center;
-        gap: 8px;
+        width: 100%;
+        height: 100%;
+        align-items: stretch;
+        position: relative;
       }
       .cd-tab-btn {
-        background: #2b2b2f;
-        border: 1px solid rgba(240, 68, 28, 0.35);
-        border-radius: 9999px;
-        color: #f0441c;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        font-size: 13.5px;
-        font-weight: 600;
-        letter-spacing: 0.4px;
-        text-transform: uppercase;
-        padding: 6px 14px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .cd-tab-btn:hover {
-        color: #ffffff;
-        border-color: #f0441c;
-      }
-      .cd-tab-btn.is-active {
-        background: #f0441c;
-        color: #000000;
-        border-color: #f0441c;
-        font-weight: 600;
-        box-shadow: 0 2px 8px rgba(240, 68, 28, 0.4);
-      }
-
-      /* Croix pour fermer */
-      .cd-drawer-close {
-        background: transparent;
+        appearance: none;
+        outline: none;
         border: none;
-        color: #f0441c;
-        font-size: 22px;
-        font-weight: 900;
+        border-radius: 0;
+        background: #111114;
+        color: #bf2925;
+        font-family: 'Hammersmith One', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
         cursor: pointer;
-        padding: 0 4px;
-        line-height: 1;
-        transition: transform 0.15s;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: background 0.2s ease, color 0.2s ease;
+        position: relative;
+        box-sizing: border-box;
+      }
+      .cd-tab-btn span {
+        position: relative;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      /* Onglet gauche (PLAYLIST) avec coupure oblique en biseau */
+      .cd-tab-btn.cd-tab-left {
+        flex: 0 0 40%;
+        clip-path: polygon(0 0, 100% 0, calc(100% - 24px) 100%, 0 100%);
+        padding: 0 16px 0 20px;
+        justify-content: center;
+      }
+
+      /* Onglet droit (AJOUTER MORCEAUX) commençant au biseau */
+      .cd-tab-btn.cd-tab-right {
+        flex: 1;
+        margin-left: -24px;
+        clip-path: polygon(24px 0, 100% 0, 100% 100%, 0 100%);
+        padding: 0 48px 0 20px;
+        justify-content: center;
+      }
+
+      /* Couleurs selon actif/inactif conformes à la couleur #e84522 */
+      .cd-tab-btn.is-active {
+        background: #e84522;
+        color: #000000;
+      }
+      .cd-tab-btn:not(.is-active) {
+        background: #111114;
+        color: #e84522;
+      }
+      .cd-tab-btn:hover,
+      .cd-tab-btn:not(.is-active):hover {
+        background: #e84522;
+        color: #000000;
+      }
+
+      /* Bouton rond noir de fermeture comme sur l'image */
+      .cd-drawer-close {
+        position: absolute;
+        top: 10px;
+        right: 14px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #000000;
+        border: none;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 900;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        transition: transform 0.15s, background 0.15s;
+      }
+      .cd-drawer-close:hover {
+        transform: scale(1.1);
+        background: #222226;
       }
       .cd-drawer-close:active {
-        transform: scale(0.85);
+        transform: scale(0.9);
       }
 
       /* ONGLETS CONTENU */
       .cd-tab-content {
         display: none;
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
+        padding: 14px 18px 0;
       }
       .cd-tab-content.is-active {
         display: flex;
@@ -445,39 +507,68 @@ export default {
       .cd-search-capsule {
         display: flex;
         align-items: center;
+        gap: 8px;
         background: #0c0b0d;
         border-radius: 9999px;
         padding: 8px 16px;
-        border: 1.5px solid rgba(240, 68, 28, 0.45);
+        border: 1.5px solid rgba(232, 69, 34, 0.45);
       }
       .cd-search-input {
         flex: 1;
         background: transparent;
         border: none;
-        color: #f0441c;
-        font-family: 'Courier New', monospace;
+        color: #e84522;
+        font-family: 'Hammersmith One', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         font-size: 14px;
-        font-weight: 800;
-        letter-spacing: 1.2px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
         outline: none;
         text-transform: uppercase;
       }
       .cd-search-input::placeholder {
-        color: #f0441c;
-        opacity: 0.8;
+        color: #e84522;
+        opacity: 0.75;
       }
-      .cd-search-submit {
+      .cd-search-btns {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .cd-search-submit,
+      .cd-search-reset {
         background: transparent;
         border: none;
-        color: #f0441c;
+        color: #e84522;
         cursor: pointer;
-        font-size: 15px;
         padding: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+      }
+      .cd-search-submit:hover {
+        transform: scale(1.15);
+      }
+      .cd-search-submit:active {
+        transform: scale(0.9);
+      }
+      .cd-search-reset:hover {
+        transform: rotate(90deg) scale(1.15);
+      }
+      .cd-search-reset:active {
+        transform: rotate(270deg) scale(0.9);
+      }
+      .cd-refresh-ico {
+        width: 17px;
+        height: 17px;
+        display: block;
       }
 
       .cd-search-status {
-        font-size: 11px;
-        color: #ff7755;
+        font-family: 'Hammersmith One', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        color: #e84522;
         text-align: center;
         min-height: 14px;
       }
@@ -493,6 +584,22 @@ export default {
         flex-direction: column;
         gap: 8px;
         border: 1px solid rgba(255, 255, 255, 0.06);
+        scrollbar-width: thin;
+        scrollbar-color: #e84522 #2c2c31;
+      }
+      .cd-drawer-scroll-area::-webkit-scrollbar {
+        width: 8px;
+      }
+      .cd-drawer-scroll-area::-webkit-scrollbar-track {
+        background: #2c2c31;
+        border-radius: 9999px;
+      }
+      .cd-drawer-scroll-area::-webkit-scrollbar-thumb {
+        background: #e84522;
+        border-radius: 9999px;
+      }
+      .cd-drawer-scroll-area::-webkit-scrollbar-thumb:hover {
+        background: #f0441c;
       }
 
       /* VERSION 2 EN-TÊTE AVEC RECHERCHE RÉTRACTABLE */
@@ -504,10 +611,12 @@ export default {
         min-height: 38px;
       }
       .cd-v2-title {
-        font-size: 12px;
-        font-weight: 900;
-        letter-spacing: 1.2px;
-        color: #f0441c;
+        font-family: 'Hammersmith One', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        color: #e84522;
+        text-transform: uppercase;
       }
       .cd-v2-search-box {
         position: relative;
@@ -564,9 +673,10 @@ export default {
         background: transparent;
         border: none;
         color: #f0441c;
-        font-family: 'Courier New', monospace;
-        font-size: 11px;
-        font-weight: 800;
+        font-family: 'Hammersmith One', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
         outline: none;
         text-transform: uppercase;
       }
@@ -610,20 +720,50 @@ export default {
         border-radius: 9999px;
         padding: 7px 12px;
         color: #ffffff;
-        font-family: 'Courier New', monospace;
-        font-size: 11px;
-        font-weight: 700;
+        font-family: 'Hammersmith One', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 400;
+        letter-spacing: 0.4px;
         flex: 1;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        text-transform: uppercase;
+        text-transform: none;
       }
       .cd-row-item.is-active .cd-row-title-pill {
-        background: #3b1916;
-        border: 1.5px solid #f0441c;
-        color: #ff8866;
+        background: #e84522;
+        border: 1.5px solid #000000;
+        color: #000000;
+      }
+
+      /* MORCEAUX DANS L'ONGLET AJOUTER MORCEAUX : COULEUR DE POLICE ORANGE */
+      #tab-version-1 .cd-row-title-pill,
+      .cd-search-results .cd-row-title-pill {
+        color: #ff7a22;
+      }
+
+      /* MORCEAUX DANS LA PLAYLIST : FOND #bf2925, SURVOL ET SÉLECTION #e84522 */
+      .cd-playlist-items .cd-row-title-pill {
+        background: #bf2925;
+        color: #000000;
+        font-weight: 400;
+        border: 1.5px solid transparent;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .cd-playlist-items .cd-row-item.cd-row-clickable:hover .cd-row-title-pill {
+        background: #e84522;
+        color: #000000;
+        border-color: transparent;
+      }
+      .cd-playlist-items .cd-row-item.is-active .cd-row-title-pill {
+        background: #e84522;
+        color: #000000;
+        border: 2px solid #000000;
+        box-shadow: 0 0 10px rgba(232, 69, 34, 0.45);
+      }
+      .cd-playlist-items .cd-row-thumb {
+        border: 1.5px solid #000000;
       }
 
       /* PETIT BOUTON "+" POUR LA VERSION 1 */
@@ -659,15 +799,17 @@ export default {
         transition: transform 0.12s ease;
       }
       .cd-row-item.cd-row-clickable:hover .cd-row-title-pill {
-        background: #36363b;
-        border-color: rgba(240, 68, 28, 0.45);
+        background: #e84522;
+        color: #000000;
+        border-color: rgba(232, 69, 34, 0.45);
       }
       .cd-row-item.cd-row-clickable:active {
         transform: scale(0.98);
       }
 
       .cd-empty-hint, .cd-loading-txt {
-        font-size: 11px;
+        font-family: 'Hammersmith One', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
         color: rgba(255, 255, 255, 0.55);
         text-align: center;
         padding: 12px 6px;
@@ -909,12 +1051,12 @@ export default {
       .cd-marquee-text, .cd-marquee-text-dup {
         display: inline-block;
         padding-right: 48px;
-        font-family: 'Courier New', 'Lucida Console', Monaco, monospace;
+        font-family: 'Courier New', 'Lucida Console', Monaco, monospace !important;
         font-size: 13px;
         font-weight: 900;
         color: #000000;
         letter-spacing: 1.3px;
-        text-transform: uppercase;
+        text-transform: none;
         line-height: 1;
       }
       @keyframes cd-marquee {
@@ -1057,6 +1199,7 @@ export default {
     // V1 Recherche
     const searchInput = panel.querySelector('.cd-search-input')
     const searchSubmit = panel.querySelector('.cd-search-submit')
+    const searchReset = panel.querySelector('.cd-search-reset')
     const searchStatus = panel.querySelector('.cd-search-status')
     const searchResults = panel.querySelector('.cd-search-results')
 
@@ -1131,9 +1274,26 @@ export default {
       renderPlaylistItems()
     })
 
+    // Formate les titres pour respecter minuscules sauf majuscules de début de mot/phrase ou noms propres
+    const formaterCasseTitre = (str) => {
+      if (!str || typeof str !== 'string') return ''
+      const trimmed = str.trim()
+      if (trimmed.length <= 3) return trimmed // préserver acronymes courts (ex: PNL, DJ, USA...)
+      const aDesLettres = /[a-zA-ZÀ-ÿ]/.test(trimmed)
+      // Si la chaîne est complètement en majuscules (ex: "ONE MORE TIME", "STARBOY")
+      if (aDesLettres && trimmed === trimmed.toUpperCase()) {
+        return trimmed.toLowerCase().replace(/(^|[\s\-–—'’(«"/])([a-zA-ZÀ-ÿ])/g, (_, sep, char) => sep + char.toUpperCase())
+      }
+      // Si la chaîne est complètement en minuscules (ex: "one more time")
+      if (aDesLettres && trimmed === trimmed.toLowerCase()) {
+        return trimmed.replace(/(^|[\s\-–—'’(«"/])([a-zA-ZÀ-ÿ])/g, (_, sep, char) => sep + char.toUpperCase())
+      }
+      return trimmed
+    }
+
     // Met à jour le texte défilant dans l'écran LCD
     const updateMarquee = (title, artist) => {
-      const text = `${title} - ${artist}`.toUpperCase()
+      const text = `${formaterCasseTitre(title)} - ${formaterCasseTitre(artist)}`
       if (marqueeText) marqueeText.textContent = text
       if (marqueeTextDup) marqueeTextDup.textContent = text
     }
@@ -1388,7 +1548,7 @@ export default {
         const itemHtml = `
           <div class="cd-row-item cd-row-clickable ${isCurrent ? 'is-active' : ''}" data-id="${track.id}" title="Cliquer pour écouter">
             ${track.cover ? `<img src="${track.cover}" class="cd-row-thumb" alt="cover" />` : ''}
-            <div class="cd-row-title-pill">${track.title} - ${track.artist}</div>
+            <div class="cd-row-title-pill">${formaterCasseTitre(track.title)} - ${formaterCasseTitre(track.artist)}</div>
           </div>
         `
         playlistItemsContainer.insertAdjacentHTML('beforeend', itemHtml)
@@ -1500,7 +1660,7 @@ export default {
           const itemHtml = `
             <div class="cd-row-item" data-id="${track.id}">
               ${coverSmall ? `<img src="${coverSmall}" class="cd-row-thumb" alt="cover" />` : ''}
-              <div class="cd-row-title-pill">${track.title} - ${track.artist?.name || ''}</div>
+              <div class="cd-row-title-pill">${formaterCasseTitre(track.title)} - ${formaterCasseTitre(track.artist?.name || '')}</div>
               <button class="cd-btn-plus" title="Ajouter ce morceau" aria-label="Ajouter">+</button>
             </div>
           `
@@ -1521,7 +1681,7 @@ export default {
               addBtn.textContent = '✔'
               addBtn.classList.add('is-added')
               searchStatus.style.color = '#34c759'
-              searchStatus.textContent = `✔ « ${track.title} » AJOUTÉ !`
+              searchStatus.textContent = `✔ « ${formaterCasseTitre(track.title)} » AJOUTÉ !`
               ctx.state.trackCache.set(track.id, {
                 id: track.id,
                 title: track.title,
@@ -1545,9 +1705,24 @@ export default {
       }
     }
 
+    const reinitialiserRecherche = () => {
+      if (searchInput) {
+        searchInput.value = ''
+        searchInput.focus()
+      }
+      if (searchStatus) {
+        searchStatus.textContent = ''
+      }
+      if (searchResults) {
+        searchResults.innerHTML = '<div class="cd-empty-hint">Tapez un titre ou artiste pour ajouter à la playlist</div>'
+      }
+    }
+
     if (searchSubmit) searchSubmit.addEventListener('click', executerRecherche)
+    if (searchReset) searchReset.addEventListener('click', reinitialiserRecherche)
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') executerRecherche()
+      if (e.key === 'Escape') reinitialiserRecherche()
     })
   },
 
