@@ -172,37 +172,17 @@ export default {
       <div class="cd-device-root">
         <!-- PARTIE NOIRE SUPÉRIEURE (DRAWER PLAYLIST AVEC 2 ONGLETS) -->
         <div class="cd-drawer is-closed">
-          <!-- En-tête : Onglets VERSION 1 / VERSION 2 + Croix de fermeture -->
+          <!-- En-tête : Onglet PLAYLIST à gauche / AJOUTER MORCEAUX à droite + Croix de fermeture -->
           <div class="cd-drawer-header">
             <div class="cd-tabs-nav">
-              <button class="cd-tab-btn is-active" data-tab="version-1">AJOUTER MORCEAUX</button>
-              <button class="cd-tab-btn" data-tab="version-2">PLAYLIST</button>
+              <button class="cd-tab-btn is-active" data-tab="version-2">PLAYLIST</button>
+              <button class="cd-tab-btn" data-tab="version-1">AJOUTER MORCEAUX</button>
             </div>
             <button class="cd-drawer-close" aria-label="Fermer" title="Fermer">✕</button>
           </div>
 
-          <!-- CONTENU ONGLET VERSION 1 (RECHERCHE + BOUTON +) -->
-          <div class="cd-tab-content is-active" id="tab-version-1">
-            <div class="cd-search-capsule">
-              <input type="text" class="cd-search-input" placeholder="RECHERCHER..." />
-              <button class="cd-search-submit" aria-label="Lancer la recherche" title="Rechercher">
-                <svg viewBox="0 0 24 24" class="cd-search-ico">
-                  <circle cx="11" cy="11" r="7" stroke="#f0441c" stroke-width="2.4" fill="none" />
-                  <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="#f0441c" stroke-width="2.4" stroke-linecap="round" />
-                </svg>
-              </button>
-            </div>
-            <div class="cd-search-status"></div>
-
-            <div class="cd-drawer-scroll-area">
-              <div class="cd-search-results">
-                <div class="cd-empty-hint">Tapez un titre ou artiste pour ajouter à la playlist</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- CONTENU ONGLET VERSION 2 (PLAYLIST ENTIÈRE + BOUTON RECHERCHE RÉTRACTABLE) -->
-          <div class="cd-tab-content" id="tab-version-2">
+          <!-- CONTENU ONGLET VERSION 2 (PLAYLIST ENTIÈRE + BOUTON RECHERCHE RÉTRACTABLE) - ACTIF PAR DÉFAUT -->
+          <div class="cd-tab-content is-active" id="tab-version-2">
             <!-- Barre d'outils de la playlist avec recherche rétractable à droite -->
             <div class="cd-v2-header">
               <div class="cd-v2-title">PLAYLIST (<span class="cd-v2-count">0</span>)</div>
@@ -225,6 +205,26 @@ export default {
             <div class="cd-drawer-scroll-area">
               <div class="cd-playlist-items">
                 <div class="cd-loading-txt">Chargement de la playlist...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTENU ONGLET VERSION 1 (RECHERCHE + BOUTON +) -->
+          <div class="cd-tab-content" id="tab-version-1">
+            <div class="cd-search-capsule">
+              <input type="text" class="cd-search-input" placeholder="RECHERCHER..." />
+              <button class="cd-search-submit" aria-label="Lancer la recherche" title="Rechercher">
+                <svg viewBox="0 0 24 24" class="cd-search-ico">
+                  <circle cx="11" cy="11" r="7" stroke="#f0441c" stroke-width="2.4" fill="none" />
+                  <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="#f0441c" stroke-width="2.4" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div class="cd-search-status"></div>
+
+            <div class="cd-drawer-scroll-area">
+              <div class="cd-search-results">
+                <div class="cd-empty-hint">Tapez un titre ou artiste pour ajouter à la playlist</div>
               </div>
             </div>
           </div>
@@ -314,8 +314,30 @@ export default {
       </div>
     `
 
-    // Styles complets avec couleur orange préservée (#f0441c), onglets et animations
     ctx.ui.style(`
+      }
+
+      /* Le conteneur UI (#ra-hotspots) et le player passent devant le viseur (.ra-aim z-index: 20) */
+      #ra-hotspots {
+        z-index: 25;
+      }
+      .ra-panels {
+        z-index: 25;
+      }
+      .ra-panel {
+        z-index: 25;
+      }
+      .ra-aim {
+        z-index: 10 !important;
+      }
+
+      /* Quand le menu (drawer) est ouvert, le viseur est obligatoirement placé derrière */
+      :root:has(.cd-drawer:not(.is-closed)) .ra-aim,
+      body:has(.cd-drawer:not(.is-closed)) .ra-aim {
+        z-index: 10 !important;
+      }
+
+      .ra-panels {
       .cd-device-root {
         font-family: 'Courier New', 'Lucida Console', Monaco, monospace;
         display: flex;
@@ -366,13 +388,14 @@ export default {
       }
       .cd-tab-btn {
         background: #2b2b2f;
-        border: 1px solid rgba(240, 68, 28, 0.3);
+        border: 1px solid rgba(240, 68, 28, 0.35);
         border-radius: 9999px;
-        color: rgba(255, 255, 255, 0.7);
-        font-family: 'Courier New', monospace;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 1px;
+        color: #f0441c;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-size: 13.5px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
         padding: 6px 14px;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -385,6 +408,7 @@ export default {
         background: #f0441c;
         color: #000000;
         border-color: #f0441c;
+        font-weight: 600;
         box-shadow: 0 2px 8px rgba(240, 68, 28, 0.4);
       }
 
@@ -1044,27 +1068,52 @@ export default {
     const v2SearchInput = panel.querySelector('.cd-v2-search-input')
     const v2SearchClose = panel.querySelector('.cd-v2-search-close')
 
-    // Gestion de l'ouverture / fermeture du drawer
+    // S'assurer que les conteneurs parents du panneau le positionnent au-dessus du viseur (.ra-aim z-index: 20)
+    try {
+      if (panel.parentElement) panel.parentElement.style.zIndex = '25'
+      if (panel.parentElement && panel.parentElement.parentElement) {
+        panel.parentElement.parentElement.style.zIndex = '25'
+      }
+    } catch (_) {}
+
+    const updateDrawerState = () => {
+      const isOpen = !drawer.classList.contains('is-closed')
+      panel.classList.toggle('is-drawer-open', isOpen)
+    }
+
+    // Fonction de sélection d'onglet
+    const selectTab = (target) => {
+      tabButtons.forEach((b) => {
+        b.classList.toggle('is-active', b.getAttribute('data-tab') === target)
+      })
+      if (target === 'version-2') {
+        tabV2.classList.add('is-active')
+        tabV1.classList.remove('is-active')
+      } else {
+        tabV1.classList.add('is-active')
+        tabV2.classList.remove('is-active')
+      }
+    }
+
+    // Gestion de l'ouverture / fermeture du drawer (arrive direct sur PLAYLIST à l'ouverture)
     playlistBtn.addEventListener('click', () => {
+      const willOpen = drawer.classList.contains('is-closed')
       drawer.classList.toggle('is-closed')
+      if (willOpen) {
+        selectTab('version-2')
+      }
+      updateDrawerState()
     })
     closeDrawerBtn.addEventListener('click', () => {
       drawer.classList.add('is-closed')
+      updateDrawerState()
     })
 
-    // Navigation entre onglets VERSION 1 et VERSION 2
+    // Navigation entre onglets PLAYLIST et AJOUTER MORCEAUX
     tabButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
-        tabButtons.forEach((b) => b.classList.remove('is-active'))
-        btn.classList.add('is-active')
         const target = btn.getAttribute('data-tab')
-        if (target === 'version-1') {
-          tabV1.classList.add('is-active')
-          tabV2.classList.remove('is-active')
-        } else {
-          tabV1.classList.remove('is-active')
-          tabV2.classList.add('is-active')
-        }
+        if (target) selectTab(target)
       })
     })
 
