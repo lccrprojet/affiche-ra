@@ -395,11 +395,11 @@ export default {
         background: #19191d;
         border: none;
         border-radius: 28px 28px 0 0;
-        padding: 0 0 16px 0;
+        padding: 0 0 75px 0;
         position: relative;
         display: flex;
         flex-direction: column;
-        margin-bottom: -10px;
+        margin-bottom: -60px;
         z-index: 10;
         box-shadow: 0 -12px 36px rgba(0,0,0,0.85);
         box-sizing: border-box;
