@@ -171,7 +171,7 @@ export default {
     panel.innerHTML = `
       <div class="cd-device-root">
         <!-- PARTIE NOIRE SUPÉRIEURE (DRAWER PLAYLIST AVEC 2 ONGLETS) -->
-        <div class="cd-drawer is-closed">
+        <div class="cd-drawer is-closed tab-playlist-active">
           <!-- En-tête : Onglet PLAYLIST à gauche / AJOUTER MORCEAUX à droite avec biseau -->
           <div class="cd-drawer-header">
             <div class="cd-tabs-nav">
@@ -234,9 +234,8 @@ export default {
             <div class="cd-search-status"></div>
 
             <div class="cd-drawer-scroll-area">
-              <div class="cd-search-results">
-                <div class="cd-empty-hint">Tapez un titre ou artiste pour ajouter à la playlist</div>
-              </div>
+              <div class="cd-tab1-manifesto">Cette playlist a pour objectif de créer du lien social entre les étudiants pendant la canicule. Notre but est de placer des affiches comme celle que vous voyez devant vous aux fenêtres des appartements. Notre intention première était de protéger les étudiants de la chaleur pour combattre la précarité et sensibiliser sur les effets sur la santé mentale des jeunes isolés. Pour cela, les passants, voyant l'affiche, peuvent ajouter des musiques dans la playlist collaborative.</div>
+              <div class="cd-search-results"></div>
             </div>
           </div>
         </div>
@@ -312,9 +311,15 @@ export default {
           <button class="cd-playlist-btn" aria-label="Ouvrir la playlist" title="PLAYLIST">
             <div class="cd-playlist-dial">
               <svg viewBox="0 0 100 100" class="cd-playlist-svg">
-                <path id="curve-playlist" d="M 14,50 A 36,36 0 0,1 86,50" fill="none" />
+                <path id="curve-playlist-top" d="M 14,50 A 36,36 0 0,1 86,50" fill="none" />
+                <path id="curve-playlist-bottom" d="M 86,50 A 36,36 0 0,1 14,50" fill="none" />
                 <text fill="#e84522" font-family="'Hammersmith One', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="15" letter-spacing="3.8">
-                  <textPath href="#curve-playlist" startOffset="50%" text-anchor="middle">
+                  <textPath href="#curve-playlist-top" startOffset="50%" text-anchor="middle">
+                    PLAYLIST
+                  </textPath>
+                </text>
+                <text fill="#e84522" font-family="'Hammersmith One', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="15" letter-spacing="3.8">
+                  <textPath href="#curve-playlist-bottom" startOffset="50%" text-anchor="middle">
                     PLAYLIST
                   </textPath>
                 </text>
@@ -326,7 +331,20 @@ export default {
     `
 
     ctx.ui.style(`
-      @import url('https://fonts.googleapis.com/css2?family=Hammersmith+One&display=swap');
+      @font-face {
+        font-family: 'Bitcount Single';
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+        src: url('https://fonts.gstatic.com/s/bitcountsingle/v3/or2uQ6T72-iP2RY6OLSkb95a817cjULDyyhvb6tTxCxtAOObpH9NnfLjSWiXv_OGqtjRD0BNzrItMZWC-9SK8R6EpA2l9RAyEMMpnu5kMto.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Bitcount Single';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('https://fonts.gstatic.com/s/bitcountsingle/v3/or2uQ6T72-iP2RY6OLSkb95a817cjULDyyhvb6tTxCxtAOObpH9NnfLjSWiXv_OGqtjRD0BNzrItMZWC-9SK8R6EpA2l9RAyEMMpnu5kMto.woff2') format('woff2');
+      }
 
       /* Le conteneur UI (#ra-hotspots) et le player passent devant le viseur (.ra-aim z-index: 20) */
       #ra-hotspots {
@@ -335,8 +353,14 @@ export default {
       .ra-panels {
         z-index: 25;
       }
-      .ra-panel {
+      .ra-panel,
+      .ra-panel.is-bottom,
+      .ra-panel.vinyle-player {
         z-index: 25;
+        background: transparent !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
       }
       .ra-aim {
         z-index: 10 !important;
@@ -369,8 +393,7 @@ export default {
         width: 480px;
         max-width: 94vw;
         background: #19191d;
-        border: 2.5px solid #000000;
-        border-bottom: none;
+        border: none;
         border-radius: 28px 28px 0 0;
         padding: 0 0 16px 0;
         position: relative;
@@ -393,8 +416,8 @@ export default {
         height: 52px;
         display: flex;
         align-items: stretch;
-        background: #000000;
-        border-bottom: 2px solid #000000;
+        background: transparent;
+        border-bottom: none;
         box-sizing: border-box;
       }
       .cd-tabs-nav {
@@ -462,7 +485,7 @@ export default {
         color: #000000;
       }
 
-      /* Bouton rond noir de fermeture comme sur l'image */
+      /* Bouton rond de fermeture : dans AJOUTER MORCEAUX, croix orange avec fond noir */
       .cd-drawer-close {
         position: absolute;
         top: 10px;
@@ -472,7 +495,7 @@ export default {
         border-radius: 50%;
         background: #000000;
         border: none;
-        color: #ffffff;
+        color: #e84522;
         font-size: 14px;
         font-weight: 900;
         cursor: pointer;
@@ -482,14 +505,27 @@ export default {
         justify-content: center;
         z-index: 10;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-        transition: transform 0.15s, background 0.15s;
+        transition: transform 0.15s, background 0.15s, color 0.15s;
       }
       .cd-drawer-close:hover {
         transform: scale(1.1);
-        background: #222226;
+        background: #000000;
+        color: #e84522;
       }
       .cd-drawer-close:active {
         transform: scale(0.9);
+      }
+
+      /* Dans l'onglet PLAYLIST : croix noire avec fond orange */
+      .cd-drawer.tab-playlist-active .cd-drawer-close,
+      .cd-drawer:has(.cd-tab-left.is-active) .cd-drawer-close {
+        background: #e84522;
+        color: #000000;
+      }
+      .cd-drawer.tab-playlist-active .cd-drawer-close:hover,
+      .cd-drawer:has(.cd-tab-left.is-active) .cd-drawer-close:hover {
+        background: #e84522;
+        color: #000000;
       }
 
       /* ONGLETS CONTENU */
@@ -498,6 +534,9 @@ export default {
         flex-direction: column;
         gap: 12px;
         padding: 14px 18px 0;
+        height: 284px;
+        min-height: 284px;
+        box-sizing: border-box;
       }
       .cd-tab-content.is-active {
         display: flex;
@@ -573,6 +612,20 @@ export default {
         min-height: 14px;
       }
 
+      /* TEXTE EXPLICATIF ONGLET AJOUTER MORCEAUX */
+      .cd-tab1-manifesto {
+        color: #e84522;
+        font-family: 'Hammersmith One', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 12.5px;
+        line-height: 1.5;
+        text-align: justify;
+        text-justify: inter-word;
+        hyphens: none;
+        -webkit-hyphens: none;
+        padding: 4px 8px 10px;
+        letter-spacing: 0.2px;
+      }
+
       /* ZONE DE DÉFILEMENT INTÉRIEURE */
       .cd-drawer-scroll-area {
         background: #0c0b0d;
@@ -583,9 +636,14 @@ export default {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        border: none;
         scrollbar-width: thin;
         scrollbar-color: #e84522 #2c2c31;
+      }
+      #tab-version-1 .cd-drawer-scroll-area {
+        background: transparent;
+        padding: 0;
+        flex: 1;
       }
       .cd-drawer-scroll-area::-webkit-scrollbar {
         width: 8px;
@@ -713,7 +771,7 @@ export default {
         object-fit: cover;
         background: #1a1a1c;
         flex-shrink: 0;
-        border: 1px solid rgba(240, 68, 28, 0.4);
+        border: none;
       }
       .cd-row-title-pill {
         background: #28282c;
@@ -730,17 +788,18 @@ export default {
         text-overflow: ellipsis;
         white-space: nowrap;
         text-transform: none;
+        border: none;
       }
       .cd-row-item.is-active .cd-row-title-pill {
         background: #e84522;
-        border: 1.5px solid #000000;
+        border: none;
         color: #000000;
       }
 
       /* MORCEAUX DANS L'ONGLET AJOUTER MORCEAUX : COULEUR DE POLICE ORANGE */
       #tab-version-1 .cd-row-title-pill,
       .cd-search-results .cd-row-title-pill {
-        color: #ff7a22;
+        color: #e84522;
       }
 
       /* MORCEAUX DANS LA PLAYLIST : FOND #bf2925, SURVOL ET SÉLECTION #e84522 */
@@ -748,22 +807,22 @@ export default {
         background: #bf2925;
         color: #000000;
         font-weight: 400;
-        border: 1.5px solid transparent;
+        border: none;
         transition: background 0.15s ease, color 0.15s ease;
       }
       .cd-playlist-items .cd-row-item.cd-row-clickable:hover .cd-row-title-pill {
         background: #e84522;
         color: #000000;
-        border-color: transparent;
+        border: none;
       }
       .cd-playlist-items .cd-row-item.is-active .cd-row-title-pill {
         background: #e84522;
         color: #000000;
-        border: 2px solid #000000;
+        border: none;
         box-shadow: 0 0 10px rgba(232, 69, 34, 0.45);
       }
       .cd-playlist-items .cd-row-thumb {
-        border: 1.5px solid #000000;
+        border: none;
       }
 
       /* PETIT BOUTON "+" POUR LA VERSION 1 */
@@ -789,8 +848,9 @@ export default {
         transform: scale(0.85);
       }
       .cd-btn-plus.is-added {
-        background: #2ecc71;
-        color: #ffffff;
+        background: #000000;
+        color: #e84522;
+        box-shadow: none;
       }
 
       /* LIGNES CLIQUABLES DANS LA PLAYLIST */
@@ -801,7 +861,7 @@ export default {
       .cd-row-item.cd-row-clickable:hover .cd-row-title-pill {
         background: #e84522;
         color: #000000;
-        border-color: rgba(232, 69, 34, 0.45);
+        border: none;
       }
       .cd-row-item.cd-row-clickable:active {
         transform: scale(0.98);
@@ -1045,17 +1105,17 @@ export default {
         display: inline-flex;
         align-items: center;
         white-space: nowrap;
-        animation: cd-marquee 8s linear infinite;
+        animation: cd-marquee 6s linear infinite;
         will-change: transform;
       }
       .cd-marquee-text, .cd-marquee-text-dup {
         display: inline-block;
         padding-right: 48px;
-        font-family: 'Courier New', 'Lucida Console', Monaco, monospace !important;
-        font-size: 13px;
-        font-weight: 900;
+        font-family: 'Bitcount Single', monospace !important;
+        font-size: 14px;
+        font-weight: 400;
         color: #000000;
-        letter-spacing: 1.3px;
+        letter-spacing: 1.2px;
         text-transform: none;
         line-height: 1;
       }
@@ -1232,9 +1292,13 @@ export default {
       if (target === 'version-2') {
         tabV2.classList.add('is-active')
         tabV1.classList.remove('is-active')
+        drawer.classList.add('tab-playlist-active')
+        drawer.classList.remove('tab-ajouter-active')
       } else {
         tabV1.classList.add('is-active')
         tabV2.classList.remove('is-active')
+        drawer.classList.add('tab-ajouter-active')
+        drawer.classList.remove('tab-playlist-active')
       }
     }
 
@@ -1680,8 +1744,7 @@ export default {
               await ctx.shared.add('essais', { deezerId: track.id })
               addBtn.textContent = '✔'
               addBtn.classList.add('is-added')
-              searchStatus.style.color = '#34c759'
-              searchStatus.textContent = `✔ « ${formaterCasseTitre(track.title)} » AJOUTÉ !`
+              searchStatus.textContent = ''
               ctx.state.trackCache.set(track.id, {
                 id: track.id,
                 title: track.title,
@@ -1689,7 +1752,6 @@ export default {
                 cover: track.album?.cover_medium || track.album?.cover_small || '',
                 preview: track.preview,
               })
-              setTimeout(() => { searchStatus.textContent = '' }, 3500)
             } catch (err) {
               searchStatus.style.color = '#ff6b6b'
               searchStatus.textContent = err.message
@@ -1714,7 +1776,7 @@ export default {
         searchStatus.textContent = ''
       }
       if (searchResults) {
-        searchResults.innerHTML = '<div class="cd-empty-hint">Tapez un titre ou artiste pour ajouter à la playlist</div>'
+        searchResults.innerHTML = ''
       }
     }
 
