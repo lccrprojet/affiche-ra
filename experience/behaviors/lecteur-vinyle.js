@@ -1262,6 +1262,7 @@ export default {
     const searchReset = panel.querySelector('.cd-search-reset')
     const searchStatus = panel.querySelector('.cd-search-status')
     const searchResults = panel.querySelector('.cd-search-results')
+    const tab1Manifesto = panel.querySelector('.cd-tab1-manifesto')
 
     // V2 Playlist
     const v2Count = panel.querySelector('.cd-v2-count')
@@ -1704,6 +1705,7 @@ export default {
       const query = searchInput.value.trim()
       if (!query) return
 
+      if (tab1Manifesto) tab1Manifesto.style.display = 'none'
       searchStatus.textContent = 'RECHERCHE SUR DEEZER...'
       searchResults.innerHTML = ''
 
@@ -1778,6 +1780,9 @@ export default {
       if (searchResults) {
         searchResults.innerHTML = ''
       }
+      if (tab1Manifesto) {
+        tab1Manifesto.style.display = 'block'
+      }
     }
 
     if (searchSubmit) searchSubmit.addEventListener('click', executerRecherche)
@@ -1785,6 +1790,13 @@ export default {
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') executerRecherche()
       if (e.key === 'Escape') reinitialiserRecherche()
+    })
+    searchInput.addEventListener('input', () => {
+      if (!searchInput.value.trim()) {
+        if (tab1Manifesto) tab1Manifesto.style.display = 'block'
+        if (searchResults) searchResults.innerHTML = ''
+        if (searchStatus) searchStatus.textContent = ''
+      }
     })
   },
 
